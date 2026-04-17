@@ -1,0 +1,72 @@
+import { Link, Outlet, useLocation } from "react-router-dom"
+import { coachNavItems, getRouteTitle } from "../../config/navigation"
+import { cn } from "../../lib/utils"
+import { Sidebar } from "../shell/Sidebar"
+import { Button } from "../ui/Button"
+
+export function CoachLayout() {
+  const location = useLocation()
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-950">
+      <Sidebar
+        footer={
+          <div className="space-y-3 rounded-2xl bg-slate-100 p-4">
+            <p className="text-sm font-semibold text-slate-950">Coach workspace</p>
+            <p className="text-sm text-slate-500">
+              Start with the core tools first, then expand into the remaining legacy screens.
+            </p>
+          </div>
+        }
+        items={coachNavItems}
+        subtitle="Coach workspace"
+        title="Online Coach"
+      />
+
+      <div className="lg:pl-72">
+        <header className="sticky top-0 z-30 border-b border-slate-200 bg-slate-50/95 backdrop-blur">
+          <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Coach workspace</p>
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
+                {getRouteTitle(location.pathname)}
+              </h1>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Button asChild variant="outline">
+                <Link to="/athlete/dashboard">Athlete View</Link>
+              </Button>
+              <Button asChild>
+                <Link to="/dashboard/messages">Open Messages</Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200 lg:hidden">
+            <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 py-3 sm:px-6">
+              {coachNavItems.map((item) => (
+                <Link
+                  key={item.to}
+                  className={cn(
+                    "whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+                    location.pathname === item.to
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-950"
+                  )}
+                  to={item.to}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  )
+}

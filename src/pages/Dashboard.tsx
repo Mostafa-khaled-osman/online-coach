@@ -1,90 +1,100 @@
-import React from "react"
-import { Typography } from "../components/ui/Typography"
-import { DataCard, DataCardHeader, DataCardTitle, DataCardContent } from "../components/ui/DataCard"
+import { CalendarDays, DollarSign, MessageSquare, Users } from "lucide-react"
+import { Link } from "react-router-dom"
 import { Button } from "../components/ui/Button"
-import { Users, TrendingUp, Calendar as CalendarIcon, Clock } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card"
+import { PageHeader } from "../components/ui/PageHeader"
 
 const stats = [
-  { name: "Total Clients", value: "24", icon: Users, change: "+2 this month", changeType: "positive" },
-  { name: "Active Sessions", value: "12", icon: CalendarIcon, change: "Next in 2h", changeType: "neutral" },
-  { name: "Hours Coached", value: "148", icon: Clock, change: "+12 this week", changeType: "positive" },
-  { name: "Revenue", value: "$4,200", icon: TrendingUp, change: "+8% this month", changeType: "positive" },
+  { label: "Active clients", value: "24", note: "+2 this month", icon: Users },
+  { label: "Sessions today", value: "5", note: "2 still upcoming", icon: CalendarDays },
+  { label: "Unread messages", value: "8", note: "6 need a reply", icon: MessageSquare },
+  { label: "Revenue", value: "$4,200", note: "+8% this month", icon: DollarSign },
 ]
 
 export function Dashboard() {
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <Typography variant="h2">Welcome back, Tom</Typography>
-          <Typography variant="muted" className="mt-1">Here's what's happening with your coaching business today.</Typography>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="outline">View Schedule</Button>
-          <Button>New Client</Button>
-        </div>
-      </div>
+      <PageHeader
+        actions={
+          <>
+            <Button asChild variant="outline">
+              <Link to="/dashboard/schedule">View schedule</Link>
+            </Button>
+            <Button asChild>
+              <Link to="/dashboard/clients">Open clients</Link>
+            </Button>
+          </>
+        }
+        description="The coach dashboard is now part of the rebuilt shared shell and links directly into the core workflows."
+        eyebrow="Coach workspace"
+        title="Dashboard"
+      />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <DataCard key={stat.name}>
-            <DataCardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <DataCardTitle className="text-sm font-medium text-slate-600">
-                {stat.name}
-              </DataCardTitle>
-              <stat.icon className="h-4 w-4 text-slate-400" />
-            </DataCardHeader>
-            <DataCardContent>
-              <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
-              <p className={`text-xs mt-1 ${stat.changeType === 'positive' ? 'text-emerald-600' : 'text-slate-500'}`}>
-                {stat.change}
-              </p>
-            </DataCardContent>
-          </DataCard>
-        ))}
-      </div>
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {stats.map((stat) => {
+          const Icon = stat.icon
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <DataCard>
-          <DataCardHeader>
-            <DataCardTitle>Upcoming Sessions</DataCardTitle>
-          </DataCardHeader>
-          <DataCardContent>
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-4 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors">
-                  <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold">
-                    {String.fromCharCode(64 + i)}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-900">Client Name {i}</p>
-                    <p className="text-xs text-slate-500">Today, {10 + i}:00 AM - {11 + i}:00 AM</p>
-                  </div>
-                  <Button variant="ghost" size="sm">Join</Button>
-                </div>
-              ))}
-            </div>
-          </DataCardContent>
-        </DataCard>
-
-        <DataCard>
-          <DataCardHeader>
-            <DataCardTitle>Recent Activity</DataCardTitle>
-          </DataCardHeader>
-          <DataCardContent>
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex gap-4">
-                  <div className="mt-1 h-2 w-2 rounded-full bg-primary-500" />
+          return (
+            <Card key={stat.label}>
+              <CardHeader>
+                <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-sm text-slate-900">New message from Client {i}</p>
-                    <p className="text-xs text-slate-500">{i} hour{i > 1 ? 's' : ''} ago</p>
+                    <CardDescription>{stat.label}</CardDescription>
+                    <CardTitle className="mt-2 text-3xl">{stat.value}</CardTitle>
+                  </div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-50 text-primary-600">
+                    <Icon className="h-5 w-5" />
                   </div>
                 </div>
-              ))}
-            </div>
-          </DataCardContent>
-        </DataCard>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-slate-500">{stat.note}</p>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Priority tasks</CardTitle>
+            <CardDescription>Use the rebuilt main routes to move from one coach job to the next.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {[
+              { title: "Reply to client messages", to: "/dashboard/messages" },
+              { title: "Review upcoming sessions", to: "/dashboard/schedule" },
+              { title: "Update a client note", to: "/dashboard/clients" },
+            ].map((item) => (
+              <Link
+                key={item.to}
+                className="block rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950"
+                to={item.to}
+              >
+                {item.title}
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent activity</CardTitle>
+            <CardDescription>Short static feed for the first pass.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {[
+              "Sarah submitted this week's check-in.",
+              "Michael asked to move tomorrow's session.",
+              "Emma completed the upper-body workout log.",
+            ].map((item) => (
+              <div key={item} className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+                {item}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

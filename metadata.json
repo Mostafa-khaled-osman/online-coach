@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "description": "",
+  "name": "Online Coach",
+  "description": "A connected frontend shell for coaches and athletes.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }
