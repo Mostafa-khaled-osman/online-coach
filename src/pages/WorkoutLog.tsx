@@ -1,87 +1,139 @@
-import { CheckCircle2, Timer } from "lucide-react"
-import { Link } from "react-router-dom"
-import { Button } from "../components/ui/Button"
+import { useEffect, useState } from "react"
+import { Dumbbell, AlertCircle, FileText, Download } from "lucide-react"
+import { api, getApiError } from "../lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card"
 import { PageHeader } from "../components/ui/PageHeader"
 
-const exercises = [
-  { name: "Bench press", sets: "3 / 4", weight: "85 kg", reps: "8", note: "+2.5 kg vs last week" },
-  { name: "Overhead press", sets: "1 / 3", weight: "50 kg", reps: "10", note: "Steady" },
-  { name: "Bent over row", sets: "0 / 4", weight: "-", reps: "-", note: "Up next" },
-]
+type DailyWorkout = {
+  dayNumber: number
+  exercisesText: string
+}
+
+type WorkoutPlan = {
+  generalNotes: string
+  dailyWorkouts: DailyWorkout[]
+  workoutFileUrl?: string
+}
 
 export function WorkoutLog() {
+  const [workout, setWorkout] = useState<WorkoutPlan | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    api
+      .get<WorkoutPlan>("/client/my-workout")
+      .then(({ data }) => setWorkout(data))
+      .catch((err) => {
+        if (err?.response?.status === 404) {
+          // No workout assigned yet, not a critical error
+        } else {
+          setError(getApiError(err))
+        }
+      })
+      .finally(() => setIsLoading(false))
+  }, [])
+
   return (
     <div className="space-y-8">
       <PageHeader
-        actions={
-          <>
-            <Button asChild variant="outline">
-              <Link to="/athlete/meal-planner">Next: meals</Link>
-            </Button>
-            <Button>Complete workout</Button>
-          </>
-        }
-        description="The workout page now sits inside the shared athlete layout and links directly to the next useful steps."
+        description="Your training protocol, complete with exercises, sets, and coach notes."
         eyebrow="Athlete hub"
-        title="Workout Log"
+        title="Workout Plan"
       />
 
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Today's session</CardTitle>
-            <CardDescription>Track the current block without leaving the athlete route tree.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {exercises.map((exercise) => (
-              <div key={exercise.name} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-semibold text-slate-950">{exercise.name}</p>
-                    <p className="text-sm text-slate-500">{exercise.note}</p>
+      {isLoading ? (
+        <div className="flex items-center gap-3 text-sm text-slate-500">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-slate-900" />
+          Loading your workout plan…
+        </div>
+      ) : error ? (
+        <div className="flex items-center gap-3 rounded-xl bg-red-50 p-4 text-sm text-red-700">
+          <AlertCircle className="h-4 w-4" />
+          {error}
+        </div>
+      ) : !workout ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+          <Dumbbell className="mx-auto mb-4 h-8 w-8 text-slate-300" />
+          <h3 className="text-lg font-medium text-slate-950">No workout plan assigned</h3>
+          <p className="mt-2 text-sm text-slate-500">
+            Your coach hasn't assigned a workout plan yet. Check back later.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+                    <Dumbbell className="h-5 w-5" />
                   </div>
-                  <div className="grid grid-cols-3 gap-3 text-sm sm:min-w-64">
-                    <div className="rounded-xl bg-white p-3">
-                      <p className="text-slate-500">Sets</p>
-                      <p className="mt-1 font-semibold text-slate-950">{exercise.sets}</p>
-                    </div>
-                    <div className="rounded-xl bg-white p-3">
-                      <p className="text-slate-500">Weight</p>
-                      <p className="mt-1 font-semibold text-slate-950">{exercise.weight}</p>
-                    </div>
-                    <div className="rounded-xl bg-white p-3">
-                      <p className="text-slate-500">Reps</p>
-                      <p className="mt-1 font-semibold text-slate-950">{exercise.reps}</p>
-                    </div>
+                  <div>
+                    <CardTitle>Daily Training Split</CardTitle>
+                    <CardDescription>Your prescribed exercises for the week.</CardDescription>
                   </div>
                 </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {workout.dailyWorkouts.length === 0 ? (
+                  <p className="text-sm text-slate-500">No daily workouts defined.</p>
+                ) : (
+                  workout.dailyWorkouts
+                    .sort((a, b) => a.dayNumber - b.dayNumber)
+                    .map((day) => (
+                      <div key={day.dayNumber} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                          Day {day.dayNumber}
+                        </p>
+                        <div className="whitespace-pre-wrap text-sm text-slate-950">
+                          {day.exercisesText}
+                        </div>
+                      </div>
+                    ))
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Session summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm text-slate-600">
-              <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-4">
-                <Timer className="h-4 w-4 text-primary-600" />
-                <span>42 minutes elapsed</span>
-              </div>
-              <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-4">
-                <CheckCircle2 className="h-4 w-4 text-secondary-600" />
-                <span>Intensity feels on track for the current block.</span>
-              </div>
-              <Button asChild className="w-full">
-                <Link to="/athlete/progress">Review progress</Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <CardTitle>Coach Notes</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="whitespace-pre-wrap text-sm text-slate-600">
+                  {workout.generalNotes || "No general notes provided."}
+                </div>
+              </CardContent>
+            </Card>
+
+            {workout.workoutFileUrl && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Workout Attachments</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <a
+                    href={workout.workoutFileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download Plan PDF / Image
+                  </a>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

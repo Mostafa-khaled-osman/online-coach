@@ -1,11 +1,21 @@
-import { Link, Outlet, useLocation } from "react-router-dom"
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 import { athleteNavItems, getRouteTitle } from "../../config/navigation"
 import { cn } from "../../lib/utils"
 import { Sidebar } from "../shell/Sidebar"
 import { Button } from "../ui/Button"
+import { useAuth } from "../../context/AuthContext"
+import { LogOut } from "lucide-react"
+import { NotificationsPopover } from "../ui/NotificationsPopover"
 
 export function AthleteLayout() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
+
+  async function handleLogout() {
+    await logout()
+    navigate("/signin", { replace: true })
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
@@ -33,13 +43,23 @@ export function AthleteLayout() {
               </h1>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {user && (
+                <span className="text-sm text-slate-500">
+                  {user.name}
+                </span>
+              )}
               <Button asChild variant="outline">
-                <Link to="/dashboard">Coach View</Link>
-              </Button>
-              <Button asChild>
                 <Link to="/athlete/checkin">Weekly Check-In</Link>
               </Button>
+              <NotificationsPopover />
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </button>
             </div>
           </div>
 

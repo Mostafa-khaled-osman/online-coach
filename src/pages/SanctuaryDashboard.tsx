@@ -1,135 +1,146 @@
-import { ArrowRight, CalendarDays, Dumbbell, HeartPulse, MessageSquare } from "lucide-react"
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { Button } from "../components/ui/Button"
+import { ArrowRight, Dumbbell, MessageSquare, Utensils, AlertCircle, CreditCard } from "lucide-react"
+import { api, getApiError } from "../lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card"
 import { PageHeader } from "../components/ui/PageHeader"
+import { Button } from "../components/ui/Button"
 
-const stats = [
-  { label: "Training streak", value: "6 days" },
-  { label: "Meals logged", value: "18 this week" },
-  { label: "Check-ins", value: "1 due today" },
-]
+type MyPlan = {
+  planTitle: string
+  status: "PENDING" | "ACTIVE" | "EXPIRED"
+  expiresAt?: string
+  durationDays?: number
+}
+
+const STATUS_STYLES: Record<string, string> = {
+  ACTIVE: "bg-emerald-100 text-emerald-700",
+  PENDING: "bg-amber-100 text-amber-700",
+  EXPIRED: "bg-slate-100 text-slate-600",
+}
 
 const quickActions = [
-  { title: "Workout log", to: "/athlete/workout-log", icon: Dumbbell, description: "Track today's lifts and notes." },
-  { title: "Meal planner", to: "/athlete/meal-planner", icon: HeartPulse, description: "Review meals and daily nutrition." },
-  { title: "Chat", to: "/athlete/chat", icon: MessageSquare, description: "Message your coach without leaving the hub." },
+  { title: "Workout Plan", to: "/athlete/workout-log", icon: Dumbbell, description: "View your assigned workout routine." },
+  { title: "Meal Plan", to: "/athlete/meal-planner", icon: Utensils, description: "See your personalised diet plan." },
+  { title: "AI Nutrition Chat", to: "/athlete/chat", icon: MessageSquare, description: "Ask the AI nutrition assistant anything." },
 ]
 
 export function SanctuaryDashboard() {
+  const [plan, setPlan] = useState<MyPlan | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    api
+      .get<MyPlan>("/client/my-plan")
+      .then(({ data }) => setPlan(data))
+      .catch((err) => {
+        // 404 = no plan yet — not an error to show prominently
+        if (err?.response?.status !== 404) {
+          setError(getApiError(err))
+        }
+      })
+      .finally(() => setIsLoading(false))
+  }, [])
+
   return (
     <div className="space-y-8">
       <PageHeader
         actions={
           <>
             <Button asChild variant="outline">
-              <Link to="/athlete/checkin">Weekly check-in</Link>
+              <Link to="/athlete/progress">My progress</Link>
             </Button>
             <Button asChild>
-              <Link to="/athlete/workout-log">Start workout</Link>
+              <Link to="/athlete/workout-log">View workout</Link>
             </Button>
           </>
         }
-        description="The athlete home base now links cleanly into workouts, meals, progress, supplements, and check-ins."
+        description="Your personal training hub — plan status, diet, workouts, and AI nutrition chat."
         eyebrow="Athlete hub"
         title="Dashboard"
       />
 
-      <div className="grid gap-6 md:grid-cols-3">
-        {stats.map((stat) => (
-          <Card key={stat.label}>
-            <CardHeader>
-              <CardDescription>{stat.label}</CardDescription>
-              <CardTitle className="text-3xl">{stat.value}</CardTitle>
-            </CardHeader>
-          </Card>
-        ))}
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      {/* Plan Status Card */}
+      {isLoading ? (
+        <div className="flex items-center gap-3 text-sm text-slate-500">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-slate-900" />
+          Loading your plan…
+        </div>
+      ) : error ? (
+        <div className="flex items-center gap-3 rounded-xl bg-red-50 p-4 text-sm text-red-700">
+          <AlertCircle className="h-4 w-4" />
+          {error}
+        </div>
+      ) : plan ? (
         <Card>
           <CardHeader>
-            <CardTitle>Today's focus</CardTitle>
-            <CardDescription>Use the shared routes below to move through your day without dead ends.</CardDescription>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardDescription>Current Subscription</CardDescription>
+                <CardTitle className="mt-1 text-2xl">{plan.planTitle}</CardTitle>
+              </div>
+              <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${STATUS_STYLES[plan.status]}`}>
+                {plan.status}
+              </span>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-sm font-medium text-slate-500">Primary session</p>
-              <p className="mt-2 text-lg font-semibold text-slate-950">Upper body strength</p>
-              <p className="mt-2 text-sm text-slate-600">Log sets, then jump straight into meal planning and recovery notes.</p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-sm font-medium text-slate-500">Next milestone</p>
-              <p className="mt-2 text-lg font-semibold text-slate-950">Weekly check-in due tonight</p>
-              <p className="mt-2 text-sm text-slate-600">Share recovery, bodyweight, and progress notes in one place.</p>
-            </div>
-            <Button asChild variant="outline">
-              <Link to="/athlete/progress">
-                Open progress view
-                <ArrowRight className="h-4 w-4" />
+          <CardContent>
+            {plan.status === "PENDING" && (
+              <p className="mb-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                ⏳ Your payment is under review. Your coach will activate your plan shortly.
+              </p>
+            )}
+            {plan.status === "EXPIRED" && (
+              <p className="mb-3 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                Your plan has expired. Upload a new payment to continue.
+              </p>
+            )}
+            {plan.expiresAt && (
+              <p className="text-sm text-slate-500">
+                Expires: <strong className="text-slate-950">{new Date(plan.expiresAt).toLocaleDateString()}</strong>
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>No active plan</CardTitle>
+            <CardDescription>
+              You don't have a subscription yet. Upload your payment proof to get started.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link to="/athlete/payment">
+                <CreditCard className="h-4 w-4" />
+                Upload payment proof
               </Link>
             </Button>
           </CardContent>
         </Card>
+      )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick links</CardTitle>
-            <CardDescription>The main athlete routes now belong to one consistent navigation system.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {quickActions.map((item) => {
-              const Icon = item.icon
-
-              return (
-                <Link
-                  key={item.to}
-                  className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 transition-colors hover:border-slate-300"
-                  to={item.to}
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-primary-600 shadow-sm">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-950">{item.title}</p>
-                    <p className="text-sm text-slate-500">{item.description}</p>
-                  </div>
-                </Link>
-              )
-            })}
-          </CardContent>
-        </Card>
+      {/* Quick Actions */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        {quickActions.map(({ title, to, icon: Icon, description }) => (
+          <Link
+            key={to}
+            to={to}
+            className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md"
+          >
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+              <Icon className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-slate-950">{title}</p>
+              <p className="mt-0.5 text-sm text-slate-500">{description}</p>
+            </div>
+            <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-slate-400" />
+          </Link>
+        ))}
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Week at a glance</CardTitle>
-          <CardDescription>Use schedule, nutrition, and coach chat together instead of as separate mockups.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
-              <CalendarDays className="h-4 w-4" />
-              Monday
-            </div>
-            <p className="mt-2 font-semibold text-slate-950">Workout log + meals</p>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
-              <CalendarDays className="h-4 w-4" />
-              Wednesday
-            </div>
-            <p className="mt-2 font-semibold text-slate-950">Progress review</p>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
-              <CalendarDays className="h-4 w-4" />
-              Sunday
-            </div>
-            <p className="mt-2 font-semibold text-slate-950">Weekly check-in</p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }
