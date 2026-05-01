@@ -67,7 +67,6 @@ export default function App() {
           <Route path="/" element={<SymmetryAthletic />} />
           <Route path="/aether-wellness" element={<AetherWellness />} />
           <Route path="/about" element={<About />} />
-          <Route path="/pricing" element={<PricingPlans />} />
           <Route path="/success-stories" element={<SuccessStories />} />
           <Route path="/articles" element={<Articles />} />
           <Route path="/signin" element={<SignIn />} />
@@ -75,8 +74,8 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/checkout" element={<Checkout />} />
-          {/* Dynamic coach landing page: /:slug */}
-          <Route path="/coach/:slug" element={<CoachLanding />} />
+          {/* Dynamic coach landing page: /:coachSlug */}
+          <Route path="/:slug" element={<CoachLanding />} />
         </Route>
 
         {/* ── Coach Dashboard (ROLE_COACH required) ──────────────────────── */}
@@ -85,13 +84,14 @@ export default function App() {
             <Route index element={<Dashboard />} />
             <Route path="clients" element={<ClientsCRM />} />
             <Route path="clients/:id" element={<ClientDetail />} />
+            <Route path="plans" element={<PricingPlans />} />
+            <Route path="payments" element={<CheckInReviewer />} />
             <Route path="schedule" element={<Schedule />} />
             <Route path="messages" element={<Messages />} />
             <Route path="settings" element={<AccountSettings />} />
           </Route>
 
           {/* Coach sub-pages outside the sidebar layout */}
-          <Route path="/dashboard/checkin-reviewer" element={<CheckInReviewer />} />
           <Route path="/dashboard/library" element={<ExerciseLibrary />} />
           <Route path="/dashboard/revenue" element={<RevenueAnalytics />} />
           <Route path="/dashboard/exercise-manager" element={<ExerciseManager />} />

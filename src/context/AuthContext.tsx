@@ -13,16 +13,19 @@ import { api, getApiError } from "../lib/api"
 export type Role = "ROLE_ADMIN" | "ROLE_COACH" | "ROLE_USER"
 
 export type AuthUser = {
+  userId: string
   role: Role
-  name: string
+  name?: string
+  coachId?: string | null
 }
 
 type AuthContextValue = {
   user: AuthUser | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (emailOrPhone: string, password: string) => Promise<void>
+  login: (emailOrPhone: string, password: string) => Promise<AuthUser>
   logout: () => Promise<void>
+  refreshSession: () => Promise<AuthUser>
   /** Manually set user (e.g. after registration redirect) */
   setUser: (user: AuthUser | null) => void
 }
@@ -35,7 +38,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => {
-    // Restore from sessionStorage so refresh keeps you logged in
+    // Restore from sessionStorage so refresh keeps you logged in initially
     try {
       const stored = sessionStorage.getItem("gymeni_user")
       return stored ? (JSON.parse(stored) as AuthUser) : null
@@ -43,7 +46,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null
     }
   })
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const refreshSession = useCallback(async () => {
+    try {
+      const { data } = await api.get<AuthUser>("/auth/me")
+      setUser(data)
+      return data
+    } catch (error) {
+      setUser(null)
+      throw error
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    refreshSession()
+  }, [refreshSession])
 
   // Persist user to sessionStorage whenever it changes
   useEffect(() => {
@@ -57,17 +77,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (emailOrPhone: string, password: string) => {
     setIsLoading(true)
     try {
-      const { data } = await api.post<AuthUser>("/auth/login", {
+      await api.post("/auth/login", {
         emailOrPhone,
         password,
       })
-      setUser(data)
+      const user = await refreshSession()
+      return user
     } catch (error) {
-      throw new Error(getApiError(error))
-    } finally {
       setIsLoading(false)
+      throw new Error(getApiError(error))
     }
-  }, [])
+  }, [refreshSession])
 
   const logout = useCallback(async () => {
     setIsLoading(true)
@@ -89,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         logout,
+        refreshSession,
         setUser,
       }}
     >

@@ -27,12 +27,8 @@ export function SignIn() {
     e.preventDefault()
     setError(null)
     try {
-      await login(emailOrPhone, password)
-      // useAuth.login sets user; navigate based on role stored in context
-      // We do a small hack: read from sessionStorage since state updates are async
-      const stored = sessionStorage.getItem("gymeni_user")
-      const user = stored ? JSON.parse(stored) : null
-      const destination = from ?? (user ? roleRedirect[user.role as Role] : "/")
+      const user = await login(emailOrPhone, password)
+      const destination = from ?? (user ? roleRedirect[user.role] : "/")
       navigate(destination, { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed")

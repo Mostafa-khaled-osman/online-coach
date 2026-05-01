@@ -3,10 +3,13 @@ import { Link, useNavigate } from "react-router-dom"
 import { UserPlus, Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react"
 import { api, getApiError } from "../lib/api"
 
+import { useSearchParams } from "react-router-dom"
+
 type Gender = "MALE" | "FEMALE" | "OTHER"
 
 export function Register() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   const [form, setForm] = useState({
     name: "",
@@ -16,7 +19,7 @@ export function Register() {
     gender: "MALE" as Gender,
     password: "",
     confirmPassword: "",
-    coachSlug: "",
+    coachSlug: searchParams.get("coachSlug") || "",
   })
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
